@@ -24,7 +24,7 @@ const App = () => {
   const noSidebarPaths = ["/login", "/signup"];
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar should only render if the current path is not login or signup */}
       {!noSidebarPaths.includes(location.pathname) && (
         <>
@@ -34,12 +34,14 @@ const App = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 h-screen overflow-y-auto bg-gray-100">
+      <div className="flex-1 flex flex-col h-screen bg-black overflow-hidden">
         {/* Navbar for Mobile */}
-        <Navbar toggleSidebar={toggleSidebar} />
+        {!noSidebarPaths.includes(location.pathname) && (
+          <Navbar toggleSidebar={toggleSidebar} />
+        )}
 
-        {/* Page Content */}
-        <div>
+        {/* Page Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Home />} /> {/* ✅ Home Route Fixed */}
             <Route path="/competitions" element={<Competition />} />

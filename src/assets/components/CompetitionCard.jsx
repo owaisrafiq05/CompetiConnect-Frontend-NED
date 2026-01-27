@@ -15,7 +15,7 @@ import {
   ModalFooter,
   Input,
 } from "@heroui/react"; 
-import { LockClosedIcon } from "@heroicons/react/24/solid";
+import { LockClosedIcon, UserGroupIcon, CurrencyDollarIcon } from "@heroicons/react/24/solid";
 
 const CompetitionCard = ({ comp }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,53 +102,113 @@ const CompetitionCard = ({ comp }) => {
 
   return (
     <>
-      
-      <Card className="relative min-h-[280px] max-w-[350px] bg-dark text-white shadow-lg border-4 border-transparent animate-border rounded-xl 
-        transition-all duration-300 ease-in-out hover:shadow-[0px_0px_20px_rgba(255,255,255,0.7)] hover:scale-105 p-4">
-      
-        
-        {comp.isPrivate && (
-          <LockClosedIcon className="w-6 h-6 text-red-500 absolute top-3 right-3" />
-        )}
+      <div className="group relative">
+        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm rounded-lg border border-red-900/30 
+                        shadow-2xl hover:shadow-red-500/10 transition-all duration-500 overflow-hidden
+                        hover:border-red-500/50 transform hover:-translate-y-2">
+          
+          {/* Glow effect on hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/5 to-red-600/0 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Private indicator */}
+          {comp.isPrivate && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className="bg-red-600/20 backdrop-blur-sm rounded-full p-2 border border-red-500/30">
+                <LockClosedIcon className="w-5 h-5 text-red-400" />
+              </div>
+            </div>
+          )}
 
-        <CardHeader className="flex gap-3">
-          <div className="flex flex-col">
-            <p className="text-md font-bold">{comp.name}</p>
-            <p className="text-sm text-gray-400">Admin: {comp.admin}</p>
+          <div className="p-6 relative z-10">
+            {/* Header */}
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-red-100 transition-colors">
+                {comp.name}
+              </h3>
+              <div className="flex items-center text-gray-400 text-sm">
+                <UserGroupIcon className="w-4 h-4 mr-1" />
+                <span>Admin: {comp.admin}</span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+                {comp.description}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CurrencyDollarIcon className="w-5 h-5 text-red-400" />
+                <span className="text-white font-semibold">
+                  {comp.entryFee}
+                </span>
+                {comp.entryFee === 'Free' && (
+                  <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                    FREE
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={handleJoinClick}
+                disabled={loading}
+                className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
+                         text-white rounded-lg transition-all duration-300 font-semibold
+                         transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+                         shadow-lg hover:shadow-red-500/25"
+              >
+                {loading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Joining...</span>
+                  </div>
+                ) : (
+                  'Join Now'
+                )}
+              </button>
+            </div>
           </div>
-        </CardHeader>
-        <Divider />
-        <CardBody>
-          <p className="text-sm">{comp.description}</p>
-        </CardBody>
-        <Divider />
-        <CardFooter className="flex justify-between items-center">
-          <p className="text-sm font-semibold">
-            Entry Fee: <span className="text-red font-bold text-md">{comp.entryFee}</span>
-          </p>
-          <Button 
-            className="bg-red rounded-lg" 
-            onClick={handleJoinClick}
-            disabled={loading}
-          >
-            {loading ? 'Processing...' : 'Join Now'}
-          </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
       
       {comp.isPrivate && (
-        <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen} className="bg-white rounded-lg">
+        <Modal 
+          isOpen={isModalOpen} 
+          onOpenChange={setIsModalOpen} 
+          className="bg-gradient-to-br from-gray-900 to-black border border-red-900/30"
+          classNames={{
+            backdrop: "bg-black/80 backdrop-blur-sm",
+            base: "border border-red-900/30",
+            header: "border-b border-red-900/30",
+            footer: "border-t border-red-900/30",
+          }}
+        >
           <ModalContent>
-            <ModalHeader>Upload Your File</ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-gray-600 mb-3">Please select a file to upload for this competition.</p>
+            <ModalHeader className="text-white">
+              <div className="flex items-center space-x-2">
+                <LockClosedIcon className="w-5 h-5 text-red-400" />
+                <span>Private Competition Upload</span>
+              </div>
+            </ModalHeader>
+            <ModalBody className="text-white">
+              <p className="text-gray-300 mb-4">
+                This is a private competition. Please select a file to upload for review.
+              </p>
               <Input 
                 type="file" 
-                onChange={handleFileChange} 
-                className="border border-gray-300 rounded-md p-2 w-full" 
+                onChange={handleFileChange}
+                className="bg-black/50 border-gray-700 text-white"
+                classNames={{
+                  input: "text-white",
+                  inputWrapper: "bg-black/50 border-gray-700 hover:border-red-500 focus-within:border-red-500",
+                }}
               />
               {error && (
-                <p className="text-red-500 text-sm mt-2">{error}</p>
+                <p className="text-red-400 text-sm mt-2">{error}</p>
               )}
             </ModalBody>
             <ModalFooter>
@@ -159,15 +219,23 @@ const CompetitionCard = ({ comp }) => {
                   setError(null);
                 }}
                 disabled={loading}
+                className="text-gray-300 hover:text-white"
               >
                 Cancel
               </Button>
               <Button 
-                className="bg-red rounded-lg text-white"
                 onClick={handleJoinCompetition}
                 disabled={loading}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
               >
-                {loading ? 'Processing...' : 'Upload & Join'}
+                {loading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  'Upload & Join'
+                )}
               </Button>
             </ModalFooter>
           </ModalContent>

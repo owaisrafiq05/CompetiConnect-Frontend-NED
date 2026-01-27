@@ -8,12 +8,7 @@ const Banner = () => {
       <div className="banner-overlay"></div>
 
       {/* Content */}
-      <div className="banner-content">
-        <h1 className="banner-heading">Join & Host Exciting Competitions!</h1>
-        <p className="banner-subheading">
-          Discover, participate, and compete in global competitions across multiple fields.
-        </p>
-      </div>
+     
     </div>
   );
 };
