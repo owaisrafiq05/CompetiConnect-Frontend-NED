@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { toast, Toaster } from "sonner";
+import axios from 'axios';
 
 const Profile = () => {
   const [user, setUser] = useState({
-    username: 'JohnDoe',
-    email: 'john.doe@example.com',
-    joinDate: '2024-01-15',
-    competitions: 12,
-    wins: 5,
-    points: 2450
+    username: '',
+    email: '',
+    joinDate: '',
+    competitions: 0,
+    wins: 0,
+    points: 0
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     username: user.username,
     email: user.email
   });
+  const [loading, setLoading] = useState(true);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -27,13 +29,32 @@ const Profile = () => {
   };
 
   const handleSave = () => {
-    setUser(prev => ({
-      ...prev,
+    const uid = document.cookie.split('; ').find(row => row.startsWith('userID='))?.split('=')[1];
+    if (!uid) return toast.error('Not signed in');
+
+    axios.patch(`${import.meta.env.VITE_API_URL}/auth/user/${uid}`, {
       username: editForm.username,
       email: editForm.email
-    }));
-    setIsEditing(false);
-    toast.success('Profile updated successfully!');
+    })
+    .then(res => {
+      if (res.data && res.data.data) {
+        const updated = res.data.data;
+        setUser(prev => ({
+          ...prev,
+          username: updated.username,
+          email: updated.email
+        }));
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+      } else {
+        toast.success('Profile updated');
+        setIsEditing(false);
+      }
+    })
+    .catch(err => {
+      console.error('Error updating profile:', err);
+      toast.error(err.response?.data?.message || 'Could not update profile');
+    });
   };
 
   const handleInputChange = (e) => {
@@ -43,6 +64,50 @@ const Profile = () => {
       [name]: value
     }));
   };
+
+  useEffect(() => {
+    const uid = document.cookie.split('; ').find(row => row.startsWith('userID='))?.split('=')[1];
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const [userRes, statsRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_API_URL}/auth/user/${uid}`),
+          axios.get(`${import.meta.env.VITE_API_URL}/user/${uid}/stats`)
+        ]);
+
+        if (userRes.data && userRes.data.data) {
+          const u = userRes.data.data;
+          setUser(prev => ({
+            ...prev,
+            username: u.username || prev.username,
+            email: u.email || prev.email,
+            joinDate: u.createdAt || prev.joinDate
+          }));
+          setEditForm({ username: u.username || '', email: u.email || '' });
+        }
+
+        if (statsRes.data) {
+          setUser(prev => ({
+            ...prev,
+            competitions: statsRes.data.competitionsJoined || 0,
+            points: statsRes.data.totalPoints || 0,
+            // wins is not tracked yet in backend; keep as 0
+            wins: prev.wins || 0
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching profile/stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProfile();
+  }, []);
 
   return (
     <div className="font-['Poppins',sans-serif] p-4 lg:p-8">
