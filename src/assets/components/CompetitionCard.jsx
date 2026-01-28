@@ -16,6 +16,8 @@ import {
   Input,
 } from "@heroui/react"; 
 import { LockClosedIcon, UserGroupIcon, CurrencyDollarIcon } from "@heroicons/react/24/solid";
+import { useUser } from "../../context/UserContext";
+import { useGlobalStats } from "../../context/GlobalStatsContext";
 
 const CompetitionCard = ({ comp }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +25,8 @@ const CompetitionCard = ({ comp }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshUserData, joinedCompetitions } = useUser();
+  const { refreshGlobalStats } = useGlobalStats();
   
   const getUserId = () => {
     const uidCookie = document.cookie
@@ -31,15 +35,24 @@ const CompetitionCard = ({ comp }) => {
     return uidCookie ? uidCookie.split('=')[1] : null;
   };
 
+  // Check if already joined
+  const isAlreadyJoined = joinedCompetitions && joinedCompetitions.includes(comp.id);
+
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
 
   const handleJoinCompetition = async () => {
     const userId = getUserId();
-    console.log(userId);
     if (!userId) {
       toast.error("Please login to join competitions");
+      navigate('/login');
+      return;
+    }
+
+    if (isAlreadyJoined) {
+      toast.info("You've already joined this competition!");
+      navigate(`/competition-page/${comp.id}`);
       return;
     }
 
@@ -50,6 +63,7 @@ const CompetitionCard = ({ comp }) => {
       if (comp.isPrivate) {
         if (!selectedFile) {
           toast.error("Please select a file to upload");
+          setLoading(false);
           return;
         }
         
@@ -69,7 +83,20 @@ const CompetitionCard = ({ comp }) => {
         setIsModalOpen(false);
         setSelectedFile(null);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/comp/${comp.id}/participants`, {
+        // Add to user's joined competitions
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/user/${userId}/${comp.id}/myJoinComp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to join competition');
+        }
+
+        // Also update the competition's participant list
+        await fetch(`${import.meta.env.VITE_API_URL}/comp/${comp.id}/participants`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -77,9 +104,9 @@ const CompetitionCard = ({ comp }) => {
           body: JSON.stringify({ userId }),
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to join public competition');
-        }
+        // Refresh user data to update sidebar stats
+        await refreshUserData();
+        await refreshGlobalStats();
 
         toast.success('Successfully joined competition!');
         navigate(`/competition-page/${comp.id}`);
@@ -93,6 +120,11 @@ const CompetitionCard = ({ comp }) => {
   };
 
   const handleJoinClick = () => {
+    if (isAlreadyJoined) {
+      navigate(`/competition-page/${comp.id}`);
+      return;
+    }
+    
     if (comp.isPrivate) {
       setIsModalOpen(true);
     } else {
@@ -156,16 +188,20 @@ const CompetitionCard = ({ comp }) => {
               <button
                 onClick={handleJoinClick}
                 disabled={loading}
-                className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
+                className={`px-6 py-2 ${isAlreadyJoined 
+                  ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' 
+                  : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800'} 
                          text-white rounded-lg transition-all duration-300 font-semibold
                          transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-lg hover:shadow-red-500/25"
+                         shadow-lg hover:shadow-red-500/25`}
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     <span>Joining...</span>
                   </div>
+                ) : isAlreadyJoined ? (
+                  'View Competition'
                 ) : (
                   'Join Now'
                 )}

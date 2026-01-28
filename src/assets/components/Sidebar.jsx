@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   XMarkIcon,
   ArrowLeftOnRectangleIcon,
@@ -12,57 +11,15 @@ import {
   ChartBarIcon
 } from "@heroicons/react/24/outline";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useUser } from "../../context/UserContext";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState({ username: "", email: "" });
-  const [stats, setStats] = useState({ competitionsJoined: 0, competitionsCreated: 0, totalPoints: 0 });
+  const { isSignedIn, userInfo, stats, logout, loading } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const uid = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("userID="));
-    if (uid) {
-      const uidValue = uid.split("=")[1];
-      setIsSignedIn(true);
-
-      axios
-        .get(`${import.meta.env.VITE_API_URL}/auth/user/${uidValue}`)
-        .then((response) => {
-          if (response.data.message === "User details fetched successfully") {
-            const { username, email } = response.data.data;
-            setUserInfo({ username, email });
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching user details:", error);
-        });
-
-      // Fetch quick stats
-      axios
-        .get(`${import.meta.env.VITE_API_URL}/user/${uidValue}/stats`)
-        .then((res) => {
-          if (res.data) {
-            setStats({
-              competitionsJoined: res.data.competitionsJoined || 0,
-              competitionsCreated: res.data.competitionsCreated || 0,
-              totalPoints: res.data.totalPoints || 0,
-            });
-          }
-        })
-        .catch((err) => {
-          console.error('Error fetching user stats:', err);
-        });
-    }
-  }, []);
-
   const handleLogout = () => {
-    document.cookie = "token=; Max-Age=0; path=/";
-    document.cookie = "userID=; Max-Age=0; path=/";
-    setIsSignedIn(false);
-    setUserInfo({ username: "", email: "" });
+    logout();
     navigate("/login");
     toggleSidebar();
   };

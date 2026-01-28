@@ -42,7 +42,7 @@ const Register = () => {
       // Assuming the response structure is the same as before
       const data = response.data;
 
-      if (response.status === 200) {
+      if (response.status === 201 || response.status === 200) {
         toast.success('Registration successful! Please log in.');
         setTimeout(() => {
           navigate('/login'); // Redirect to login page after successful signup
@@ -52,7 +52,16 @@ const Register = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error('An error occurred during registration');
+      
+      // Display specific error message from server if available
+      if (error.response && error.response.data && error.response.data.message) {
+        const errorMessage = Array.isArray(error.response.data.message) 
+          ? error.response.data.message.join(', ') 
+          : error.response.data.message;
+        toast.error(errorMessage);
+      } else {
+        toast.error('An error occurred during registration');
+      }
     } finally {
       setLoading(false);
     }

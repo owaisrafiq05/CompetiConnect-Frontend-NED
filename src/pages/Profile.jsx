@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast, Toaster } from "sonner";
 import axios from 'axios';
+import { useUser } from '../context/UserContext';
+import { TrophyIcon, StarIcon, FireIcon } from "@heroicons/react/24/solid";
 
 const Profile = () => {
+  const { userInfo, stats, recentActivity, loading: contextLoading, refreshUserData } = useUser();
   const [user, setUser] = useState({
     username: '',
     email: '',
@@ -13,10 +16,30 @@ const Profile = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    username: user.username,
-    email: user.email
+    username: '',
+    email: ''
   });
   const [loading, setLoading] = useState(true);
+
+  // Sync user state with context
+  useEffect(() => {
+    if (userInfo.username) {
+      setUser(prev => ({
+        ...prev,
+        username: userInfo.username,
+        email: userInfo.email,
+        joinDate: userInfo.createdAt,
+        competitions: stats.competitionsJoined || 0,
+        wins: stats.wins || 0,
+        points: stats.totalPoints || 0
+      }));
+      setEditForm({
+        username: userInfo.username,
+        email: userInfo.email
+      });
+      setLoading(false);
+    }
+  }, [userInfo, stats]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -46,6 +69,8 @@ const Profile = () => {
         }));
         setIsEditing(false);
         toast.success('Profile updated successfully!');
+        // Refresh context data
+        refreshUserData();
       } else {
         toast.success('Profile updated');
         setIsEditing(false);
@@ -65,49 +90,66 @@ const Profile = () => {
     }));
   };
 
+  // Fallback fetch if context doesn't have data
   useEffect(() => {
-    const uid = document.cookie.split('; ').find(row => row.startsWith('userID='))?.split('=')[1];
-    if (!uid) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchProfile = async () => {
-      try {
-        const [userRes, statsRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/auth/user/${uid}`),
-          axios.get(`${import.meta.env.VITE_API_URL}/user/${uid}/stats`)
-        ]);
-
-        if (userRes.data && userRes.data.data) {
-          const u = userRes.data.data;
-          setUser(prev => ({
-            ...prev,
-            username: u.username || prev.username,
-            email: u.email || prev.email,
-            joinDate: u.createdAt || prev.joinDate
-          }));
-          setEditForm({ username: u.username || '', email: u.email || '' });
-        }
-
-        if (statsRes.data) {
-          setUser(prev => ({
-            ...prev,
-            competitions: statsRes.data.competitionsJoined || 0,
-            points: statsRes.data.totalPoints || 0,
-            // wins is not tracked yet in backend; keep as 0
-            wins: prev.wins || 0
-          }));
-        }
-      } catch (err) {
-        console.error('Error fetching profile/stats:', err);
-      } finally {
+    if (!contextLoading && !userInfo.username) {
+      const uid = document.cookie.split('; ').find(row => row.startsWith('userID='))?.split('=')[1];
+      if (!uid) {
         setLoading(false);
+        return;
       }
-    }
 
-    fetchProfile();
-  }, []);
+      const fetchProfile = async () => {
+        try {
+          const [userRes, statsRes] = await Promise.all([
+            axios.get(`${import.meta.env.VITE_API_URL}/auth/user/${uid}`),
+            axios.get(`${import.meta.env.VITE_API_URL}/user/${uid}/stats`)
+          ]);
+
+          if (userRes.data && userRes.data.data) {
+            const u = userRes.data.data;
+            setUser(prev => ({
+              ...prev,
+              username: u.username || prev.username,
+              email: u.email || prev.email,
+              joinDate: u.createdAt || prev.joinDate
+            }));
+            setEditForm({ username: u.username || '', email: u.email || '' });
+          }
+
+          if (statsRes.data) {
+            setUser(prev => ({
+              ...prev,
+              competitions: statsRes.data.competitionsJoined || 0,
+              points: statsRes.data.totalPoints || 0,
+              wins: statsRes.data.wins || 0
+            }));
+          }
+        } catch (err) {
+          console.error('Error fetching profile/stats:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchProfile();
+    }
+  }, [contextLoading, userInfo]);
+
+  // Get activity icon based on type
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'win':
+        return <TrophyIcon className="w-4 h-4 text-yellow-400" />;
+      case 'creation':
+        return <StarIcon className="w-4 h-4 text-blue-400" />;
+      default:
+        return <FireIcon className="w-4 h-4 text-red-400" />;
+    }
+  };
+
+  // Calculate win rate safely
+  const winRate = user.competitions > 0 ? Math.round((user.wins / user.competitions) * 100) : 0;
 
   return (
     <div className="font-['Poppins',sans-serif] p-4 lg:p-8">
@@ -176,12 +218,12 @@ const Profile = () => {
               <div className="mt-6">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-300">Win Rate</span>
-                  <span className="text-red-400">{Math.round((user.wins / user.competitions) * 100)}%</span>
+                  <span className="text-red-400">{winRate}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
                     className="bg-gradient-to-r from-red-600 to-red-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(user.wins / user.competitions) * 100}%` }}
+                    style={{ width: `${winRate}%` }}
                   ></div>
                 </div>
               </div>
@@ -260,27 +302,38 @@ const Profile = () => {
             <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm rounded-lg border border-red-900/30 p-8 shadow-2xl">
               <h3 className="text-2xl font-bold text-white mb-6">Recent Activity</h3>
               <div className="space-y-4">
-                {[
-                  { action: 'Won', competition: 'Web Design Challenge', date: '2 days ago', type: 'win' },
-                  { action: 'Participated', competition: 'Code Sprint 2024', date: '1 week ago', type: 'participation' },
-                  { action: 'Won', competition: 'UI/UX Contest', date: '2 weeks ago', type: 'win' },
-                  { action: 'Participated', competition: 'Algorithm Challenge', date: '3 weeks ago', type: 'participation' }
-                ].map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${activity.type === 'win' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
-                      <div>
-                        <p className="text-white font-medium">
-                          {activity.action} <span className="text-red-400">{activity.competition}</span>
-                        </p>
-                        <p className="text-gray-400 text-sm">{activity.date}</p>
+                {recentActivity && recentActivity.length > 0 ? (
+                  recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 transition-colors">
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          activity.type === 'win' ? 'bg-yellow-500/20' : 
+                          activity.type === 'creation' ? 'bg-blue-500/20' : 'bg-red-500/20'
+                        }`}>
+                          {getActivityIcon(activity.type)}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">
+                            {activity.action} <span className="text-red-400">{activity.competition}</span>
+                          </p>
+                          <p className="text-gray-400 text-sm">{activity.date}</p>
+                        </div>
                       </div>
+                      {activity.type === 'win' && (
+                        <div className="text-yellow-400 font-semibold">🏆</div>
+                      )}
+                      {activity.type === 'creation' && (
+                        <div className="text-blue-400 font-semibold">⭐</div>
+                      )}
                     </div>
-                    {activity.type === 'win' && (
-                      <div className="text-red-400 font-semibold">🏆</div>
-                    )}
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500 text-4xl mb-4">📋</div>
+                    <p className="text-gray-400">No recent activity yet</p>
+                    <p className="text-gray-500 text-sm mt-2">Join competitions to see your activity here!</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

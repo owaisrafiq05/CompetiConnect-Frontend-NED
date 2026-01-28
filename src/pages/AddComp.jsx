@@ -10,6 +10,8 @@ import {
   TrophyIcon,
   CloudArrowUpIcon
 } from "@heroicons/react/24/outline";
+import { useUser } from "../context/UserContext";
+import { useGlobalStats } from "../context/GlobalStatsContext";
 
 const AddComp = () => {
   const [compData, setCompData] = useState({
@@ -27,6 +29,8 @@ const AddComp = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshUserData, createCompetition } = useUser();
+  const { refreshGlobalStats } = useGlobalStats();
 
   const getUserId = () => {
     const uidCookie = document.cookie
@@ -98,6 +102,22 @@ const AddComp = () => {
       if (!response.ok) {
         throw new Error('Failed to add competition');
       }
+
+      const result = await response.json();
+      
+      // Add the created competition to user's created competitions
+      if (result.competition && result.competition._id) {
+        await fetch(`${import.meta.env.VITE_API_URL}/user/${userId}/${result.competition._id}/myCreatedComp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
+      // Refresh user data and global stats
+      await refreshUserData();
+      await refreshGlobalStats();
 
       toast.success('Successfully added competition!');
       navigate('/');

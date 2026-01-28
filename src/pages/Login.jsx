@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { toast , Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import axios from "axios"; 
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/bg.jpeg";
+import { useUser } from "../context/UserContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Login = () => {
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useUser();
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -37,13 +39,16 @@ const Login = () => {
         password: formData.password,
       });
 
-      // Assuming the response structure is the same as before
       const data = response.data;
 
       if (response.status === 200) {
         // Save token to cookies
         document.cookie = `token=${data.token}; path=/`;
-        document.cookie = `userID=${data.data._id}; path=/;`
+        document.cookie = `userID=${data.data._id}; path=/;`;
+        
+        // Trigger context login to refresh user data
+        await login();
+        
         toast.success('Login successful!');
         navigate('/');
       } else {
@@ -51,7 +56,13 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('An error occurred during login');
+      
+      // Display specific error message from server if available
+      if (error.response && error.response.data && error.response.data.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('An error occurred during login');
+      }
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,8 @@ import { toast, Toaster } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { MagnifyingGlassIcon, UsersIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { HeartIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+import { useUser } from "../context/UserContext";
+import { useGlobalStats } from "../context/GlobalStatsContext";
 
 const Explore = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -12,6 +14,8 @@ const Explore = () => {
   const [favorites, setFavorites] = useState(new Set());
   const [joiningCompetitions, setJoiningCompetitions] = useState(new Set());
   const navigate = useNavigate();
+  const { joinCompetition, refreshUserData, joinedCompetitions } = useUser();
+  const { refreshGlobalStats } = useGlobalStats();
 
   useEffect(() => {
     const mockImages = [
@@ -101,6 +105,13 @@ const Explore = () => {
       return;
     }
 
+    // Check if already joined
+    if (joinedCompetitions && joinedCompetitions.includes(competition.id)) {
+      toast.info("You've already joined this competition!");
+      navigate(`/competition-page/${competition.id}`);
+      return;
+    }
+
     setJoiningCompetitions(prev => new Set([...prev, competition.id]));
 
     try {
@@ -120,8 +131,20 @@ const Explore = () => {
         
         toast.success('Request sent! Waiting for admin approval.');
       } else {
-        // For public competitions, join directly
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/comp/${competition.id}/participants`, {
+        // For public competitions, join directly using the user route
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/user/${userId}/${competition.id}/myJoinComp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to join competition');
+        }
+
+        // Also update the competition's participant list
+        await fetch(`${import.meta.env.VITE_API_URL}/comp/${competition.id}/participants`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -129,9 +152,9 @@ const Explore = () => {
           body: JSON.stringify({ userId }),
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to join competition');
-        }
+        // Refresh user data to update sidebar stats and activity
+        await refreshUserData();
+        await refreshGlobalStats();
 
         toast.success('Successfully joined competition!');
         navigate(`/competition-page/${competition.id}`);
@@ -349,15 +372,20 @@ const Explore = () => {
                       <button 
                         onClick={() => handleJoinCompetition(competition)}
                         disabled={joiningCompetitions.has(competition.id)}
-                        className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
-                                 text-white rounded-lg transition-all duration-300 font-semibold
+                        className={`w-full py-3 ${
+                          joinedCompetitions && joinedCompetitions.includes(competition.id)
+                            ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
+                            : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800'
+                        } text-white rounded-lg transition-all duration-300 font-semibold
                                  transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-red-500/25
-                                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}>
                         {joiningCompetitions.has(competition.id) ? (
                           <div className="flex items-center justify-center space-x-2">
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                             <span>{competition.status === 'Private' ? 'Requesting...' : 'Joining...'}</span>
                           </div>
+                        ) : joinedCompetitions && joinedCompetitions.includes(competition.id) ? (
+                          'View Competition ✓'
                         ) : (
                           competition.status === 'Private' ? 'Request to Join' : 'Join Competition'
                         )}

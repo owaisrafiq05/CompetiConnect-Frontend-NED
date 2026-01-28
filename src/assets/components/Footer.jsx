@@ -1,51 +1,101 @@
-// import React from "react";
-// import { EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/solid";
-// import { FacebookIcon, TwitterIcon, InstagramIcon } from "@heroicons/react/24/outline";
+import React from "react";
+import { Link } from "react-router-dom";
+import { EnvelopeIcon, HeartIcon } from "@heroicons/react/24/solid";
 
-// const Footer = () => {
-//   return (
-//     <footer className="bg-gray-900 text-white py-6 mt-10">
-//       <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between">
-        
-//         {/* Left Section - Contact Info */}
-//         <div className="text-center sm:text-left mb-4 sm:mb-0">
-//           <h2 className="text-xl font-bold">Your App Name</h2>
-//           <p className="text-sm text-gray-400">Empowering users with competitions</p>
-//           <div className="flex items-center mt-2 space-x-2 text-gray-400">
-//             <EnvelopeIcon className="h-5 w-5" />
-//             <p>contact@yourapp.com</p>
-//           </div>
-//           <div className="flex items-center space-x-2 text-gray-400">
-//             <PhoneIcon className="h-5 w-5" />
-//             <p>+123 456 7890</p>
-//           </div>
-//           <div className="flex items-center space-x-2 text-gray-400">
-//             <MapPinIcon className="h-5 w-5" />
-//             <p>123 Main St, City</p>
-//           </div>
-//         </div>
+const Footer = () => {
+  const currentYear = new Date().getFullYear();
 
-//         {/* Center Section - Social Links */}
-//         <div className="flex space-x-6">
-//           <a href="#" className="hover:text-blue-500 transition">
-//             <FacebookIcon className="h-6 w-6" />
-//           </a>
-//           <a href="#" className="hover:text-blue-400 transition">
-//             <TwitterIcon className="h-6 w-6" />
-//           </a>
-//           <a href="#" className="hover:text-pink-500 transition">
-//             <InstagramIcon className="h-6 w-6" />
-//           </a>
-//         </div>
+  return (
+    <footer className="bg-gradient-to-b from-gray-900 to-black border-t border-red-900/20 mt-auto">
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Brand Section */}
+          <div className="md:col-span-2">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent mb-4">
+              CompetiConnect
+            </h2>
+            <p className="text-gray-400 max-w-md mb-4">
+              The ultimate platform for competitions. Join, compete, and win with talented 
+              individuals from around the world.
+            </p>
+            <div className="flex items-center space-x-2 text-gray-400">
+              <EnvelopeIcon className="h-5 w-5 text-red-400" />
+              <a href="mailto:support@competiconnect.com" className="hover:text-red-400 transition-colors">
+                support@competiconnect.com
+              </a>
+            </div>
+          </div>
 
-//         {/* Right Section - Copyright */}
-//         <div className="text-center sm:text-right text-gray-400 text-sm">
-//           © {new Date().getFullYear()} Your App Name. All rights reserved.
-//         </div>
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/explore" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Explore
+                </Link>
+              </li>
+              <li>
+                <Link to="/competitions" className="text-gray-400 hover:text-red-400 transition-colors">
+                  My Competitions
+                </Link>
+              </li>
+              <li>
+                <Link to="/add-comp" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Create Competition
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-//       </div>
-//     </footer>
-//   );
-// };
+          {/* Support */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">Support</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/profile" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Profile Settings
+                </Link>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-red-400 transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-// export default Footer;
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 pt-8">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <p className="text-gray-500 text-sm">
+              © {currentYear} CompetiConnect. All rights reserved.
+            </p>
+            <p className="text-gray-500 text-sm flex items-center mt-4 md:mt-0">
+              Made with <HeartIcon className="h-4 w-4 text-red-500 mx-1" /> for competitors worldwide
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;

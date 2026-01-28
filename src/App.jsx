@@ -5,12 +5,14 @@ import Navbar from "./assets/components/Navbar";
 import Competition from "./pages/Competition";
 import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
-import Home from "./pages/Home"; // ✅ FIX: Import Home
+import Home from "./pages/Home";
 import CompetitonPage from "./pages/CompetitonPage";
 import Login from "./pages/Login";
-import SignUp from "./pages/Signup"
-import { toast , Toaster } from "sonner";
+import SignUp from "./pages/Signup";
+import { toast, Toaster } from "sonner";
 import AddComp from "./pages/AddComp";
+import { UserProvider } from "./context/UserContext";
+import { GlobalStatsProvider } from "./context/GlobalStatsContext";
 
 const App = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,37 +26,41 @@ const App = () => {
   const noSidebarPaths = ["/login", "/signup"];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar should only render if the current path is not login or signup */}
-      {!noSidebarPaths.includes(location.pathname) && (
-        <>
-          <Toaster/>
-          <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
-        </>
-      )}
+    <UserProvider>
+      <GlobalStatsProvider>
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar should only render if the current path is not login or signup */}
+          {!noSidebarPaths.includes(location.pathname) && (
+            <>
+              <Toaster/>
+              <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
+            </>
+          )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen bg-black overflow-hidden">
-        {/* Navbar for Mobile */}
-        {!noSidebarPaths.includes(location.pathname) && (
-          <Navbar toggleSidebar={toggleSidebar} />
-        )}
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col h-screen bg-black overflow-hidden">
+            {/* Navbar for Mobile */}
+            {!noSidebarPaths.includes(location.pathname) && (
+              <Navbar toggleSidebar={toggleSidebar} />
+            )}
 
-        {/* Page Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
-          <Routes>
-            <Route path="/" element={<Home />} /> {/* ✅ Home Route Fixed */}
-            <Route path="/competitions" element={<Competition />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/competition-page/:id" element={<CompetitonPage/>} />
-            <Route path="/add-comp" element={<AddComp/>} />
-            <Route path="/login" element={<Login/>} />
-            <Route path="/signup" element={<SignUp/>} />
-          </Routes>
+            {/* Page Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/competitions" element={<Competition />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/competition-page/:id" element={<CompetitonPage/>} />
+                <Route path="/add-comp" element={<AddComp/>} />
+                <Route path="/login" element={<Login/>} />
+                <Route path="/signup" element={<SignUp/>} />
+              </Routes>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </GlobalStatsProvider>
+    </UserProvider>
   );
 };
 

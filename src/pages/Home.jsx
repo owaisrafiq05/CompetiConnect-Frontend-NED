@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { toast, Toaster } from "sonner";
 import { MagnifyingGlassIcon, PlusIcon, TrophyIcon, UsersIcon, FireIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 import CompetitionCard from "../assets/components/CompetitionCard";
+import { useGlobalStats } from "../context/GlobalStatsContext";
 
 const Home = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -9,6 +11,8 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState('all');
+  const { globalStats, refreshGlobalStats } = useGlobalStats();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -51,10 +55,18 @@ const Home = () => {
     return matchesSearch;
   });
 
+  // Format participant count for display
+  const formatParticipantCount = (count) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K+`;
+    }
+    return count.toString();
+  };
+
   const stats = [
-    { label: 'Total Competitions', value: competitions.length, icon: TrophyIcon, color: 'text-red-400' },
-    { label: 'Active Participants', value: '2.5K+', icon: UsersIcon, color: 'text-blue-400' },
-    { label: 'Trending Now', value: '12', icon: FireIcon, color: 'text-orange-400' },
+    { label: 'Total Competitions', value: globalStats.totalCompetitions || competitions.length, icon: TrophyIcon, color: 'text-red-400' },
+    { label: 'Active Participants', value: formatParticipantCount(globalStats.totalParticipants), icon: UsersIcon, color: 'text-blue-400' },
+    { label: 'Trending Now', value: globalStats.trendingCompetitions || Math.min(competitions.length, 5), icon: FireIcon, color: 'text-orange-400' },
   ];
 
   if (loading) {
@@ -206,7 +218,9 @@ const Home = () => {
               <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-sm rounded-lg p-8 border border-red-900/20">
                 <h3 className="text-2xl font-bold text-white mb-4">Ready to Create Your Own Competition?</h3>
                 <p className="text-gray-400 mb-6">Host your own competition and challenge others in your field</p>
-                <button className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
+                <button 
+                  onClick={() => navigate('/add-comp')}
+                  className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
                                  text-white rounded-lg transition-all duration-300 font-semibold text-lg
                                  transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-red-500/25
                                  flex items-center space-x-2 mx-auto">
