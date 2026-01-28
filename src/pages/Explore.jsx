@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { toast, Toaster } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { MagnifyingGlassIcon, UsersIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { HeartIcon } from "@heroicons/react/24/solid";
+import { HeartIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 
 const Explore = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -9,6 +10,8 @@ const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState(new Set());
+  const [joiningCompetitions, setJoiningCompetitions] = useState(new Set());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const mockImages = [
@@ -71,6 +74,13 @@ const Explore = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const getUserId = () => {
+    const uidCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('userID='));
+    return uidCookie ? uidCookie.split('=')[1] : null;
+  };
+
   const toggleFavorite = (id) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(id)) {
@@ -81,6 +91,61 @@ const Explore = () => {
       toast.success('Added to favorites');
     }
     setFavorites(newFavorites);
+  };
+
+  const handleJoinCompetition = async (competition) => {
+    const userId = getUserId();
+    if (!userId) {
+      toast.error("Please login to join competitions");
+      navigate('/login');
+      return;
+    }
+
+    setJoiningCompetitions(prev => new Set([...prev, competition.id]));
+
+    try {
+      if (competition.status === 'Private') {
+        // For private competitions, show a notification that admin approval is needed
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/comp/${competition.id}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to request to join private competition');
+        }
+        
+        toast.success('Request sent! Waiting for admin approval.');
+      } else {
+        // For public competitions, join directly
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/comp/${competition.id}/participants`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to join competition');
+        }
+
+        toast.success('Successfully joined competition!');
+        navigate(`/competition-page/${competition.id}`);
+      }
+    } catch (err) {
+      toast.error(err.message);
+      console.error('Join competition error:', err);
+    } finally {
+      setJoiningCompetitions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(competition.id);
+        return newSet;
+      });
+    }
   };
 
   const getDifficultyColor = (difficulty) => {
@@ -227,6 +292,15 @@ const Explore = () => {
                       <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-semibold">
                         {competition.prize}
                       </div>
+                      
+                      {/* Private Competition Indicator */}
+                      {competition.status === 'Private' && (
+                        <div className="absolute bottom-4 left-4">
+                          <div className="bg-yellow-600/20 backdrop-blur-sm rounded-full p-2 border border-yellow-500/30">
+                            <LockClosedIcon className="w-4 h-4 text-yellow-400" />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -272,10 +346,21 @@ const Explore = () => {
                       </div>
 
                       {/* Action Button */}
-                      <button className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
-                                       text-white rounded-lg transition-all duration-300 font-semibold
-                                       transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-red-500/25">
-                        Join Competition
+                      <button 
+                        onClick={() => handleJoinCompetition(competition)}
+                        disabled={joiningCompetitions.has(competition.id)}
+                        className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
+                                 text-white rounded-lg transition-all duration-300 font-semibold
+                                 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-red-500/25
+                                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        {joiningCompetitions.has(competition.id) ? (
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>{competition.status === 'Private' ? 'Requesting...' : 'Joining...'}</span>
+                          </div>
+                        ) : (
+                          competition.status === 'Private' ? 'Request to Join' : 'Join Competition'
+                        )}
                       </button>
                     </div>
                   </div>
