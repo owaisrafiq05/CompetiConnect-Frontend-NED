@@ -16,6 +16,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userInfo, setUserInfo] = useState({ username: "", email: "" });
+  const [stats, setStats] = useState({ competitionsJoined: 0, competitionsCreated: 0, totalPoints: 0 });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,6 +38,22 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         })
         .catch((error) => {
           console.error("Error fetching user details:", error);
+        });
+
+      // Fetch quick stats
+      axios
+        .get(`${import.meta.env.VITE_API_URL}/user/${uidValue}/stats`)
+        .then((res) => {
+          if (res.data) {
+            setStats({
+              competitionsJoined: res.data.competitionsJoined || 0,
+              competitionsCreated: res.data.competitionsCreated || 0,
+              totalPoints: res.data.totalPoints || 0,
+            });
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching user stats:', err);
         });
     }
   }, []);
@@ -152,18 +169,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <div className="mt-6 p-3 bg-black/30 rounded-lg border border-gray-700/50">
                   <h4 className="text-xs font-semibold text-gray-300 mb-2">Quick Stats</h4>
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Competitions Joined</span>
-                      <span className="text-red-400 font-semibold">12</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Competitions Created</span>
-                      <span className="text-blue-400 font-semibold">3</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Total Points</span>
-                      <span className="text-green-400 font-semibold">2,450</span>
-                    </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Competitions Joined</span>
+                        <span className="text-red-400 font-semibold">{stats.competitionsJoined}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Competitions Created</span>
+                        <span className="text-blue-400 font-semibold">{stats.competitionsCreated}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Total Points</span>
+                        <span className="text-green-400 font-semibold">{stats.totalPoints.toLocaleString()}</span>
+                      </div>
                   </div>
                 </div>
               )}

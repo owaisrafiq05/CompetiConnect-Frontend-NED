@@ -10,99 +10,53 @@ const Explore = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState(new Set());
 
-  // Mock data for demonstration
   useEffect(() => {
-    const mockCompetitions = [
-      {
-        id: 1,
-        title: "Web Design Championship 2024",
-        description: "Create stunning web designs that push the boundaries of creativity and functionality.",
-        category: "Design",
-        prize: "$5,000",
-        participants: 1250,
-        deadline: "2024-03-15",
-        difficulty: "Intermediate",
-        tags: ["UI/UX", "Frontend", "Creative"],
-        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop",
-        organizer: "TechCorp",
-        status: "Active"
-      },
-      {
-        id: 2,
-        title: "AI Innovation Challenge",
-        description: "Develop cutting-edge AI solutions to solve real-world problems and shape the future.",
-        category: "Technology",
-        prize: "$10,000",
-        participants: 890,
-        deadline: "2024-04-20",
-        difficulty: "Advanced",
-        tags: ["Machine Learning", "Python", "Innovation"],
-        image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=200&fit=crop",
-        organizer: "AI Labs",
-        status: "Active"
-      },
-      {
-        id: 3,
-        title: "Mobile App Development Sprint",
-        description: "Build innovative mobile applications that enhance user experience and solve daily challenges.",
-        category: "Development",
-        prize: "$3,000",
-        participants: 567,
-        deadline: "2024-02-28",
-        difficulty: "Beginner",
-        tags: ["React Native", "Flutter", "Mobile"],
-        image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=200&fit=crop",
-        organizer: "DevStudio",
-        status: "Active"
-      },
-      {
-        id: 4,
-        title: "Data Science Olympics",
-        description: "Analyze complex datasets and extract meaningful insights to drive business decisions.",
-        category: "Data Science",
-        prize: "$7,500",
-        participants: 2100,
-        deadline: "2024-05-10",
-        difficulty: "Advanced",
-        tags: ["Python", "Analytics", "Visualization"],
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-        organizer: "DataCorp",
-        status: "Active"
-      },
-      {
-        id: 5,
-        title: "Cybersecurity Hackathon",
-        description: "Identify vulnerabilities and create robust security solutions to protect digital assets.",
-        category: "Security",
-        prize: "$8,000",
-        participants: 445,
-        deadline: "2024-03-30",
-        difficulty: "Advanced",
-        tags: ["Security", "Ethical Hacking", "Network"],
-        image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop",
-        organizer: "SecureNet",
-        status: "Active"
-      },
-      {
-        id: 6,
-        title: "Game Development Jam",
-        description: "Create engaging games that captivate players and showcase innovative gameplay mechanics.",
-        category: "Gaming",
-        prize: "$4,500",
-        participants: 780,
-        deadline: "2024-04-05",
-        difficulty: "Intermediate",
-        tags: ["Unity", "Game Design", "Creative"],
-        image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=200&fit=crop",
-        organizer: "GameStudio",
-        status: "Active"
-      }
+    const mockImages = [
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200&h=600&fit=crop'
     ];
 
-    setTimeout(() => {
-      setCompetitions(mockCompetitions);
-      setLoading(false);
-    }, 1000);
+    const controller = new AbortController();
+
+    const fetchCompetitions = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/comp', { signal: controller.signal });
+        if (!res.ok) throw new Error('Failed to fetch competitions');
+        const data = await res.json();
+        const fetched = (data.competitions || []).map((comp, idx) => ({
+          id: comp._id,
+          title: comp.compName || 'Untitled Competition',
+          description: comp.compDescription || '',
+          category: comp.compType?.name || comp.compType || 'General',
+          prize: comp.price || 'Free',
+          participants: comp.participantCount || 0,
+          // Provide a mock future deadline for frontend display
+          deadline: new Date(Date.now() + (7 + idx) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          difficulty: ['Beginner', 'Intermediate', 'Advanced'][idx % 3],
+          tags: comp.compType ? [comp.compType?.name || comp.compType] : [],
+          // Use frontend mock images for now
+          image: mockImages[idx % mockImages.length],
+          organizer: comp.compOwnerUserId?.username || 'Organizer',
+          status: comp.isPrivate ? 'Private' : 'Active'
+        }));
+
+        setCompetitions(fetched);
+      } catch (err) {
+        console.error('Error fetching competitions:', err);
+        toast.error('Could not load competitions. Showing no results.');
+        setCompetitions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompetitions();
+
+    return () => controller.abort();
   }, []);
 
   const categories = ['all', 'Design', 'Technology', 'Development', 'Data Science', 'Security', 'Gaming'];
