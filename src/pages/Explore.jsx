@@ -24,7 +24,7 @@ const Explore = () => {
 
     const fetchCompetitions = async () => {
       try {
-        const res = await fetch('http://localhost:5000/comp', { signal: controller.signal });
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/comp`, { signal: controller.signal });
         if (!res.ok) throw new Error('Failed to fetch competitions');
         const data = await res.json();
         const fetched = (data.competitions || []).map((comp, idx) => ({

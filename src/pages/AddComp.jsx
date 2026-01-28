@@ -38,7 +38,7 @@ const AddComp = () => {
   useEffect(() => {
     const fetchCompetitionTypes = async () => {
       try {
-        const response = await fetch('http://localhost:5000/comp/type');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/comp/type`);
         if (!response.ok) {
           throw new Error('Failed to fetch competition types');
         }
@@ -87,7 +87,7 @@ const AddComp = () => {
         submissionRules: compData.submissionRules,
       };
 
-      const response = await fetch('http://localhost:5000/comp', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/comp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -33,7 +33,7 @@ const Competition = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:5000/user/${userId}/myJoinComp`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/user/${userId}/myJoinComp`);
         if (!response.ok) {
           throw new Error('Failed to fetch joined competitions');
         }
@@ -42,7 +42,7 @@ const Competition = () => {
 
         const competitions = await Promise.all(
           competitionIds.map(async (compId) => {
-            const compResponse = await fetch(`http://localhost:5000/comp/${compId}`);
+            const compResponse = await fetch(`${import.meta.env.VITE_API_URL}/comp/${compId}`);
             if (!compResponse.ok) {
               throw new Error('Failed to fetch competition details');
             }
@@ -66,7 +66,7 @@ const Competition = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:5000/user/${userId}/myCreatedComp`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/user/${userId}/myCreatedComp`);
         if (!response.ok) {
           throw new Error('Failed to fetch created competitions');
         }
@@ -75,7 +75,7 @@ const Competition = () => {
 
         const competitions = await Promise.all(
           competitionIds.map(async (compId) => {
-            const compResponse = await fetch(`http://localhost:5000/comp/${compId}`);
+            const compResponse = await fetch(`${import.meta.env.VITE_API_URL}/comp/${compId}`);
             if (!compResponse.ok) {
               throw new Error('Failed to fetch competition details');
             }
